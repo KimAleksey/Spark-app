@@ -12,7 +12,7 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-def ingestion_get_files_list(date_from: datetime, date_to: datetime) -> list[str]:
+def ingestion_get_urls(date_from: datetime, date_to: datetime) -> list[str]:
     """
     Получаем список url для загрузки
 
@@ -31,26 +31,25 @@ def ingestion_get_files_list(date_from: datetime, date_to: datetime) -> list[str
     return urls
 
 
-def ingestion_files_dict(urls: list[str]) -> list[dict[str, str]]:
+def ingestion_get_metainfo(urls: list[str]) -> list[dict[str, str]]:
     """
     Получаем список словарей (путь в s3, url, имя файла).
 
     :param files: Список url для загрузки
-    :return: Список словарей {path: str, url: str, name: str}
+    :return: Список словарей {url: str, key: str}
     """
     metainfo = []
     for url in urls:
         file_name = url.split("/")[-1]
-        path = FILE_PREFIX + "/" + file_name.split(".")[0][16:20] + "/" + file_name.split(".")[0][21:23]
-        dict = {
-            "path": path,
+        key = FILE_PREFIX + "/" + file_name.split(".")[0][16:20] + "/" + file_name.split(".")[0][21:23] + "/data.parquet"
+        buff = {
             "url": url,
-            "name": file_name,
+            "key": key,
         }
-        metainfo.append(dict)
+        metainfo.append(buff)
     return metainfo
 
 
 if __name__ == '__main__':
-    urls = ingestion_get_files_list(DATE_FROM, DATE_TO)
-    dicts = ingestion_files_dict(urls)
+    urls = ingestion_get_urls(DATE_FROM, DATE_TO)
+    dicts = ingestion_get_metainfo(urls)

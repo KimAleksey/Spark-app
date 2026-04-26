@@ -3,7 +3,8 @@ import logging
 from dotenv import load_dotenv
 from os import getenv
 from botocore.exceptions import ClientError
-
+from requests import get
+from requests.exceptions import HTTPError
 
 # Конфигурация логирования
 logging.basicConfig(
@@ -84,6 +85,7 @@ def s3_delete_bucket(s3_client: boto3.client, bucket_name: str) -> None:
     """
     if s3_check_bucket_exists(s3_client, bucket_name):
         try:
+            s3_clear_path(s3_client, bucket_name, "")
             s3_client.delete_bucket(Bucket=bucket_name)
             logging.info(f"Bucket {bucket_name} удален")
         except Exception as e:
@@ -91,8 +93,6 @@ def s3_delete_bucket(s3_client: boto3.client, bucket_name: str) -> None:
     else:
         logging.info(f"Bucket {bucket_name} не существует")
 
-
-import logging
 
 def s3_clear_path(s3_client, bucket_name: str, path: str) -> None:
     """
@@ -120,8 +120,41 @@ def s3_clear_path(s3_client, bucket_name: str, path: str) -> None:
         raise
 
 
+def s3_load_file(
+        s3_client: boto3.client,
+        bucket: str,
+        metainfo: list[dict[str, str]],
+    ) -> None:
+        """
+        Скачивает файл по URL и загружает его в S3 (через память).
+
+        :param s3_client: boto3 S3 client
+        :param bucket: имя bucket
+        :param metainfo: metainfo - url, key
+        """
+        for file_info in metainfo:
+            try:
+                response = get(file_info['url'])
+                response.raise_for_status()
+            except HTTPError as e:
+                if response.status_code == 403:
+                    logging.warning(f"Skip 403 Forbidden: {file_info['url']}")
+                    continue
+                else:
+                    raise e
+            try:
+                s3_client.put_object(
+                    Bucket=bucket,
+                    Key=file_info['key'],
+                    Body=response.content
+                )
+                logging.info(f"Uploaded: {file_info['key']}")
+            except Exception as e:
+                raise e
+
+
+
 if __name__ == '__main__':
     s3_client = s3_create_client()
-    # s3_delete_bucket(s3_client, 'test')
-    # s3_create_bucket(s3_client, 'test')
-    s3_clear_path(s3_client, "test", "")
+    s3_delete_bucket(s3_client, 'nyc-taxi')
+    # s3_create_bucket(s3_client, 'test1')

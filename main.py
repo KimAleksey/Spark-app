@@ -1,16 +1,40 @@
-# This is a sample Python script.
+import logging
+from pendulum import datetime
+from utils.s3.s3_utils import (
+    s3_create_client,
+    s3_delete_bucket,
+    s3_create_bucket,
+    s3_load_file,
+)
+from utils.ingestion.ingestion_utils import (
+    ingestion_get_urls,
+    ingestion_get_metainfo,
+)
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# Конфигурация логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
+BUCKET = 'nyc-taxi'
+DATE_FROM = datetime(2026, 1, 1)
+DATE_TO = datetime(2026, 12, 31)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+def load_data_to_s3():
+    # Подготовка S3
+    s3_client = s3_create_client()
+    s3_delete_bucket(s3_client, BUCKET)
+    s3_create_bucket(s3_client, BUCKET)
+
+    # Подготовка metainfo
+    urls = ingestion_get_urls(DATE_FROM, DATE_TO)
+    metainfo = ingestion_get_metainfo(urls)
+
+    # Загрузка в S3
+    s3_load_file(s3_client, BUCKET, metainfo)
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    load_data_to_s3()
