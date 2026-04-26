@@ -64,14 +64,14 @@ def s3_create_bucket(s3_client: boto3.client, bucket_name: str) -> None:
     :param bucket_name: Bucket name
     :return: None
     """
-    try:
-        if not s3_check_bucket_exists(s3_client, bucket_name):
+    if not s3_check_bucket_exists(s3_client, bucket_name):
+        try:
             s3_client.create_bucket(Bucket=bucket_name)
             logging.info(f"Bucket {bucket_name} создан.")
-        else:
-            logging.info(f"Bucket {bucket_name} уже существует.")
-    except Exception as e:
-        raise e
+        except Exception as e:
+            raise e
+    else:
+        logging.info(f"Bucket {bucket_name} уже существует.")
 
 
 def s3_delete_bucket(s3_client: boto3.client, bucket_name: str) -> None:
@@ -82,20 +82,46 @@ def s3_delete_bucket(s3_client: boto3.client, bucket_name: str) -> None:
     :param bucket_name: Bucket name
     :return: None
     """
-    try:
-        if s3_check_bucket_exists(s3_client, bucket_name):
+    if s3_check_bucket_exists(s3_client, bucket_name):
+        try:
             s3_client.delete_bucket(Bucket=bucket_name)
             logging.info(f"Bucket {bucket_name} удален")
-        else:
-            logging.info(f"Bucket {bucket_name} не существует")
+        except Exception as e:
+            raise e
+    else:
+        logging.info(f"Bucket {bucket_name} не существует")
+
+
+import logging
+
+def s3_clear_path(s3_client, bucket_name: str, path: str) -> None:
+    """
+    Очищает все объекты по prefix (path) в bucket.
+
+    :param s3_client: S3 client
+    :param bucket_name: Bucket name
+    :return: None
+    """
+    try:
+        s3_client.head_bucket(Bucket=bucket_name)
+        paginator = s3_client.get_paginator("list_objects_v2")
+
+        for page in paginator.paginate(Bucket=bucket_name, Prefix=path):
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    s3_client.delete_object(
+                        Bucket=bucket_name,
+                        Key=obj["Key"]
+                    )
+                    logging.info(f"Deleted: {obj['Key']}")
+        logging.info(f"Path '{path}' cleared")
     except Exception as e:
-        raise e
-
-
-# def s3_load_file(s3_client: boto3.client, bucket_name: str, file_name: str) -> str:
+        logging.error(f"Error clearing path: {e}")
+        raise
 
 
 if __name__ == '__main__':
     s3_client = s3_create_client()
-    s3_delete_bucket(s3_client, 'test')
-    s3_create_bucket(s3_client, 'test')
+    # s3_delete_bucket(s3_client, 'test')
+    # s3_create_bucket(s3_client, 'test')
+    s3_clear_path(s3_client, "test", "")
