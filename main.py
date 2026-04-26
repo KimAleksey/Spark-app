@@ -18,9 +18,9 @@ logging.basicConfig(
 )
 
 BUCKET = 'nyc-taxi'
-DATE_FROM = datetime(2026, 1, 1)
+DATE_FROM = datetime(2025, 1, 1)
 DATE_TO = datetime(2026, 12, 31)
-
+LOADED = True
 
 def load_data_to_s3():
     # Подготовка S3
@@ -37,4 +37,5 @@ def load_data_to_s3():
 
 
 if __name__ == '__main__':
-    load_data_to_s3()
+    if not LOADED:
+        load_data_to_s3()
