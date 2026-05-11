@@ -53,3 +53,14 @@ docker compose up -d
   --py-files spark/app.py \
   spark/app.py
 ```
+
+Пример запроса в Clickhouse:
+```sql
+SELECT *
+FROM s3(
+    'http://minio:9000/nyc-taxi/yellow_tripdata/daily/*.parquet',
+    'minioadmin',
+    'minioadmin',
+    'Parquet'
+);
+```
