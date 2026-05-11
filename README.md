@@ -1,4 +1,4 @@
-# Project 3: Spark Data Pipeline — NYC Taxi
+# Spark Data Pipeline — NYC Taxi
 
 End-to-end пайплайн обработки данных поездок такси Нью-Йорка (NYC Yellow Taxi) с использованием Apache Spark, MinIO (S3) и ClickHouse.
 
