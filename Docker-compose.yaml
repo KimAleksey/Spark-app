@@ -67,8 +67,24 @@ services:
     networks:
       - spark-net
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.6
+    container_name: clickhouse
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9004:9000"   # native protocol (наружу другой порт чтобы не конфликтовать с MinIO)
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - spark-net
+
 volumes:
   minio_data:
+  clickhouse_data:
 
 networks:
   spark-net:
